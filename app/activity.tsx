@@ -51,6 +51,7 @@ export default function ActivityScreen() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [correctCount, setCorrectCount] = useState(0);
   const player = useAudioPlayer(bravoSound);
   const lesson = lessonSet[questionIndex];
   const isCorrect = selected === lesson.answer;
@@ -65,6 +66,7 @@ export default function ActivityScreen() {
     setSelected(option);
     if (option === lesson.answer) {
       setShowSuccess(true);
+      setCorrectCount((current) => current + 1);
       player.seekTo(0);
       player.play();
       setTimeout(() => {
@@ -73,7 +75,7 @@ export default function ActivityScreen() {
           setSelected(null);
           setShowSuccess(false);
         } else {
-          router.replace("/progress" as any);
+          router.replace({ pathname: "/result", params: { correct: String(correctCount + 1), total: String(lessonSet.length), subject: params.subject ?? "daily" } } as any);
         }
       }, 1500);
     }
