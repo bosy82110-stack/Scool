@@ -7,3 +7,8 @@ for name in ('icon.png', 'splash-icon.png', 'favicon.png', 'android-icon-foregro
     image = Image.open(path).convert('RGBA')
     image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
     image.save(path, format='PNG', optimize=True, compress_level=9)
+
+background = root / 'login-background.png'
+image = Image.open(background).convert('RGB')
+image.thumbnail((1080, 1920), Image.Resampling.LANCZOS)
+image.save(background, format='JPEG', quality=88, optimize=True, progressive=True)
