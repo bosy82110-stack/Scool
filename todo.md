@@ -15,3 +15,4 @@
 - [x] إعدادات Android وبيانات التطبيق
 - [ ] إنشاء وتسليم APK قابل للتثبيت
 - [x] رفع كود تطبيق بسملة إلى مستودع GitHub bosy82110-stack/Scool
+- [x] إضافة GitHub Actions لبناء APK تلقائيًا وحفظه كـArtifact
