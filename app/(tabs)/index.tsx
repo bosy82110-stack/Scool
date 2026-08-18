@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  ImageBackground,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,7 +8,6 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useAudioPlayer } from "expo-audio";
 import { ScreenContainer } from "@/components/screen-container";
 
 type SubjectKey = "arabic" | "english" | "math" | "mental";
@@ -68,13 +66,11 @@ const subjects: Subject[] = [
 ];
 
 export default function HomeScreen() {
-  const bravoPlayer = useAudioPlayer(require("@/assets/audio/bravo.wav"));
   const [started, setStarted] = useState(false);
   const [activeSubject, setActiveSubject] = useState<Subject | null>(null);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [stars, setStars] = useState(0);
   const [feedback, setFeedback] = useState<"idle" | "correct" | "wrong">("idle");
-  const [soundOn, setSoundOn] = useState(true);
   const [completed, setCompleted] = useState<SubjectKey[]>([]);
 
   useEffect(() => {
@@ -108,18 +104,10 @@ export default function HomeScreen() {
     if (option === question.answer) {
       setFeedback("correct");
       setStars((value) => value + 1);
-      if (soundOn) {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        try {
-          bravoPlayer.seekTo(0);
-          bravoPlayer.play();
-        } catch {
-          // Haptics and visual feedback remain available if audio is unavailable.
-        }
-      }
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else {
       setFeedback("wrong");
-      if (soundOn) await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
 
@@ -137,7 +125,7 @@ export default function HomeScreen() {
 
   if (!started) {
     return (
-      <ImageBackground source={require("@/assets/images/login-photo.jpg")} style={styles.loginBackground} resizeMode="cover">
+      <ScreenContainer edges={["top", "bottom", "left", "right"]} containerClassName="bg-[#17324D]" className="flex-1">
         <View style={styles.loginOverlay}>
           <View style={styles.loginTop}>
             <View style={styles.logoBadge}><Text style={styles.logoBook}>✦</Text></View>
@@ -152,7 +140,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
-      </ImageBackground>
+      </ScreenContainer>
     );
   }
 
@@ -183,7 +171,7 @@ export default function HomeScreen() {
   return (
     <ScreenContainer className="bg-[#FFF9F0]" edges={["top", "bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.homeScroll}>
-        <View style={styles.homeHeader}><View><Text style={styles.hello}>أهلًا يا بسملة 👋</Text><Text style={styles.homeSubtitle}>اختاري مغامرتك التعليمية اليوم</Text></View><Pressable onPress={() => setSoundOn((value) => !value)} style={styles.soundButton}><Text style={styles.soundIcon}>{soundOn ? "🔊" : "🔇"}</Text></Pressable></View>
+        <View style={styles.homeHeader}><View><Text style={styles.hello}>أهلًا يا بسملة 👋</Text><Text style={styles.homeSubtitle}>اختاري مغامرتك التعليمية اليوم</Text></View><View style={styles.soundButton}><Text style={styles.soundIcon}>🌟</Text></View></View>
         <View style={styles.starsCard}><View><Text style={styles.starsLabel}>نجومك اليوم</Text><Text style={styles.starsValue}>★ {stars}</Text></View><Text style={styles.trophy}>🏆</Text><View style={styles.miniProgress}><View style={[styles.miniProgressFill, { width: `${Math.min((stars / 12) * 100, 100)}%` }]} /></View></View>
         <Text style={styles.sectionTitle}>اختاري مادة</Text>
         <View style={styles.subjectGrid}>{subjects.map((subject) => <Pressable key={subject.key} onPress={() => openSubject(subject)} style={({ pressed }) => [styles.subjectCard, { borderColor: subject.color }, pressed && styles.pressed]}><View style={[styles.subjectIcon, { backgroundColor: subject.color }]}><Text style={styles.subjectIconText}>{subject.icon}</Text></View><Text style={styles.subjectTitle}>{subject.title}</Text><Text style={styles.subjectSubtitle}>{subject.subtitle}</Text><Text style={[styles.subjectStatus, { color: subject.color }]}>{completed.includes(subject.key) ? "اكتمل ✓" : "ابدئي الآن  →"}</Text></Pressable>)}</View>
