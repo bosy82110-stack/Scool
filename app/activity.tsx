@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import { ScreenContainer } from "@/components/screen-container";
 
-const bravoSound = require("@/assets/audio/bravo-basmala.wav");
 
 type Lesson = { title: string; prompt: string; options: string[]; answer: string; color: string };
 const content: Record<string, Lesson[]> = {
@@ -52,14 +50,9 @@ export default function ActivityScreen() {
   const [selected, setSelected] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
-  const player = useAudioPlayer(bravoSound);
   const lesson = lessonSet[questionIndex];
   const isCorrect = selected === lesson.answer;
   const message = useMemo(() => showSuccess ? "ممتاز! استعدي للسؤال التالي" : selected ? "اقتربت! جرّبي مرة أخرى" : "اختاري إجابة واحدة", [selected, showSuccess]);
-
-  useEffect(() => {
-    setAudioModeAsync({ playsInSilentMode: true }).catch(() => undefined);
-  }, []);
 
   const chooseAnswer = (option: string) => {
     if (showSuccess) return;
@@ -67,8 +60,6 @@ export default function ActivityScreen() {
     if (option === lesson.answer) {
       setShowSuccess(true);
       setCorrectCount((current) => current + 1);
-      player.seekTo(0);
-      player.play();
       setTimeout(() => {
         if (questionIndex < lessonSet.length - 1) {
           setQuestionIndex((current) => current + 1);
