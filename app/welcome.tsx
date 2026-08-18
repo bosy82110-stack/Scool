@@ -2,7 +2,7 @@ import { ImageBackground, Pressable, StyleSheet, Text, View } from "react-native
 import { router } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 
-const background = require("@/assets/images/login-background.png");
+const background = require("@/assets/images/login-photo.jpg");
 
 export default function WelcomeScreen() {
   return <ImageBackground source={background} resizeMode="cover" style={styles.background}>
