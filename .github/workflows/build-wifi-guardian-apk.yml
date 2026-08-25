@@ -1,0 +1,69 @@
+name: Build WiFi Guardian Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "wifi-guardian/**"
+      - ".github/workflows/build-wifi-guardian-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build WiFi Guardian Release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: wifi-guardian/pnpm-lock.yaml
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install WiFi Guardian dependencies
+        working-directory: wifi-guardian
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate WiFi Guardian
+        working-directory: wifi-guardian
+        run: pnpm check && pnpm test && pnpm lint
+
+      - name: Generate Android native project
+        working-directory: wifi-guardian
+        run: pnpm exec expo prebuild --platform android --non-interactive --no-install
+
+      - name: Build release APK
+        working-directory: wifi-guardian/android
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Rename APK
+        run: cp wifi-guardian/android/app/build/outputs/apk/release/app-release.apk wifi-guardian-release.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wifi-guardian-release
+          path: wifi-guardian-release.apk
+          if-no-files-found: error
+          retention-days: 30
