@@ -23,6 +23,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: "الرئيسية", tabBarIcon: ({ color }) => <IconSymbol size={24} name="home" color={color} /> }} />
+      <Tabs.Screen name="router" options={{ title: "الراوتر", tabBarIcon: ({ color }) => <IconSymbol size={24} name="router" color={color} /> }} />
       <Tabs.Screen name="settings" options={{ title: "الإعدادات", tabBarIcon: ({ color }) => <IconSymbol size={24} name="settings" color={color} /> }} />
     </Tabs>
   );
