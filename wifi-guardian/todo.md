@@ -37,5 +37,7 @@
 - [ ] تنفيذ قواعد Traffic Policing باستخدام Committed Rate وربطها بـMAC عبر Classification.
 - [ ] ربط Access Control بنظام القائمة السوداء والبيضاء لكل SSID.
 - [x] إضافة شاشة تحكم مباشر بلوحة الراوتر المحلية داخل Android.
-- [x] إضافة إعداد عنوان الراوتر HTTPS وتدفق دخول محلي دون بيانات تجريبية.
+- [ ] إضافة إعداد عنوان الراوتر HTTPS وتدفق دخول محلي دون بيانات تجريبية.
+- [x] إصلاح ERR_CLEARTEXT_NOT_PERMITTED عبر Android Manifest/Config Plugin.
+- [ ] إعادة بناء APK واختبار فتح http://192.168.1.1 داخل WebView.
 - [x] استخراج حقول Classification وTraffic Policing لتحديد السرعة لكل جهاز.
