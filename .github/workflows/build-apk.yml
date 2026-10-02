@@ -53,12 +53,12 @@ jobs:
         run: ./gradlew assembleRelease -PreactNativeArchitectures=${{ matrix.arch }} --no-daemon --stacktrace
 
       - name: Rename APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk basmala-${{ matrix.arch }}-release.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk miqyas-${{ matrix.arch }}-release.apk
 
       - name: Upload optimized APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: basmala-${{ matrix.arch }}-release
-          path: basmala-${{ matrix.arch }}-release.apk
+          name: miqyas-${{ matrix.arch }}-release
+          path: miqyas-${{ matrix.arch }}-release.apk
           if-no-files-found: error
           retention-days: 14
