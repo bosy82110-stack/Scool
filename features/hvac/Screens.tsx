@@ -16,6 +16,15 @@ const villaTones = [
   { background: "#E7F2E5", border: "#CEE3CA", icon: "#4E8655" },
 ] as const;
 
+const equipmentTones = [
+  { background: "#E4EFFB", border: "#C9DCF4", icon: "#3972B5" },
+  { background: "#DDF4F1", border: "#B3E3DC", icon: "#087E8B" },
+  { background: "#E8E8FC", border: "#D0D0F3", icon: "#6660B5" },
+  { background: "#FFF0D7", border: "#F2DEB6", icon: "#B7771A" },
+  { background: "#FBE6E3", border: "#F0D0CB", icon: "#B8473E" },
+  { background: "#E7F2E5", border: "#CEE3CA", icon: "#4E8655" },
+] as const;
+
 export function DashboardScreen({
   villas,
   equipment,
@@ -133,42 +142,33 @@ export function VillaScreen({
       <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
         <Header title={villa.name} subtitle="الأماكن وأجهزة التكييف" onBack={onBack} actionLabel="تعديل" onAction={onEditVilla} />
         <View style={{ paddingHorizontal: 20 }}>
-          <View style={{ backgroundColor: C.navy, borderRadius: 20, padding: 17, marginBottom: 20 }}>
-            <Text style={{ color: "#A6E4DF", textAlign: "right", fontSize: 11, fontWeight: "800" }}>موقع الصيانة</Text>
-            <Text style={{ color: C.white, textAlign: "right", fontSize: 23, fontWeight: "900", marginTop: 5 }}>{villa.name}</Text>
-            <Text style={{ color: "#C7D8E2", textAlign: "right", fontSize: 12, marginTop: 4 }}>{equipment.length} أجهزة مسجلة في هذا الموقع</Text>
+          <SectionTitle title="الأجهزة" note="اضغط على الجهاز لعرض بياناته وسجله" action="＋ إضافة جهاز" onAction={onAddEquipment} />
+          {equipment.length === 0 ? <EmptyState title="لا توجد أجهزة في هذه الفيلا" description="أضف أول جهاز؛ وسيظهر هنا داخل دائرة باسمه الذي تختاره." /> : null}
+          <View style={{ flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "space-between", rowGap: 20, marginTop: equipment.length === 0 ? 16 : 0 }}>
+            {equipment.map((unit, index) => {
+              const last = latestReading(unit);
+              const due = maintenanceDue(unit);
+              const tone = equipmentTones[index % equipmentTones.length];
+              const details = [unit.type, unit.capacity].filter(Boolean).join(" · ");
+              return (
+                <Pressable key={unit.id} accessibilityRole="button" accessibilityLabel={`فتح ${unit.name}`} onPress={() => onOpenEquipment(unit.id)} style={({ pressed }) => [{ width: "31%", alignItems: "center" }, pressed && { opacity: 0.75, transform: [{ scale: 0.97 }] }]}>
+                  <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: tone.background, borderWidth: 1, borderColor: tone.border, alignItems: "center", justifyContent: "center" }}>
+                    <MaterialCommunityIcons name="air-conditioner" size={36} color={tone.icon} />
+                  </View>
+                  <Text numberOfLines={2} style={{ width: "100%", color: C.ink, fontSize: 12, fontWeight: "900", textAlign: "center", lineHeight: 16, marginTop: 7 }}>{unit.name}</Text>
+                  <Text numberOfLines={1} style={{ width: "100%", color: C.muted, fontSize: 10, textAlign: "center", marginTop: 3 }}>{details || "جهاز تكييف"}</Text>
+                  <View style={{ marginTop: 5 }}><StatusPill label={due ? "صيانة مستحقة" : `${unit.readings.length} قراءة`} tone={due ? "amber" : "green"} /></View>
+                  {last ? <Text numberOfLines={1} style={{ color: C.muted, fontSize: 9, textAlign: "center", marginTop: 4 }}>{formatDate(last.timestamp)}</Text> : null}
+                </Pressable>
+              );
+            })}
+            <Pressable accessibilityRole="button" accessibilityLabel="إضافة جهاز تكييف" onPress={onAddEquipment} style={({ pressed }) => [{ width: "31%", alignItems: "center" }, pressed && { opacity: 0.75 }]}>
+              <View style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 1.5, borderStyle: "dashed", borderColor: "#A9BDC2", backgroundColor: C.white, alignItems: "center", justifyContent: "center" }}>
+                <MaterialCommunityIcons name="plus" size={30} color={C.teal} />
+              </View>
+              <Text numberOfLines={1} style={{ color: C.teal, fontSize: 12, fontWeight: "800", textAlign: "center", marginTop: 7 }}>إضافة جهاز</Text>
+            </Pressable>
           </View>
-          <SectionTitle title="الغرف والأجهزة" note="اسم المكان أو الجهاز حسب نظامك" action="＋ إضافة جهاز" onAction={onAddEquipment} />
-          {equipment.length === 0 ? (
-            <>
-              <EmptyState title="لا توجد أجهزة في هذا الموقع" description="أضف أول جهاز، مثل «غرفة النوم الرئيسية — سبليت 2 طن»." />
-              <View style={{ marginTop: 12 }}><PrimaryButton title="＋ إضافة جهاز تكييف" onPress={onAddEquipment} /></View>
-            </>
-          ) : (
-            <View style={{ gap: 10 }}>
-              {equipment.map((unit) => {
-                const last = latestReading(unit);
-                const due = maintenanceDue(unit);
-                return (
-                  <Pressable key={unit.id} onPress={() => onOpenEquipment(unit.id)} style={({ pressed }) => [{ backgroundColor: C.white, borderRadius: 18, padding: 15, borderWidth: 1, borderColor: C.line }, pressed && { opacity: 0.8 }]}>
-                    <View style={{ flexDirection: "row-reverse", gap: 12, alignItems: "center" }}>
-                      <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: C.mint, alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.teal, fontSize: 20, fontWeight: "900" }}>❄</Text></View>
-                      <View style={{ flex: 1, alignItems: "flex-end" }}>
-                        <Text style={{ color: C.ink, fontSize: 14, fontWeight: "900", textAlign: "right" }}>{unit.name}</Text>
-                        <Text style={{ color: C.muted, fontSize: 11, marginTop: 4, textAlign: "right" }}>{[unit.manufacturer, unit.type, unit.capacity].filter(Boolean).join(" · ") || "أضف بيانات الجهاز"}</Text>
-                      </View>
-                      <Text style={{ color: C.muted, fontSize: 19 }}>‹</Text>
-                    </View>
-                    <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: C.line, marginTop: 12, paddingTop: 10 }}>
-                      <Text style={{ color: C.muted, fontSize: 10 }}>{last ? `آخر قراءة · ${formatDate(last.timestamp)}` : "لم تُسجل قراءة بعد"}</Text>
-                      <StatusPill label={due ? "صيانة مستحقة" : `${unit.readings.length} قراءة`} tone={due ? "amber" : "green"} />
-                    </View>
-                  </Pressable>
-                );
-              })}
-              <Pressable onPress={onAddEquipment} style={{ minHeight: 54, borderRadius: 16, borderWidth: 1, borderStyle: "dashed", borderColor: "#B9C9CD", alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.teal, fontSize: 13, fontWeight: "800" }}>＋ إضافة جهاز جديد</Text></Pressable>
-            </View>
-          )}
         </View>
       </ScrollView>
     </Page>
