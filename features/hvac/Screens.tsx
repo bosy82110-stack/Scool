@@ -1,10 +1,20 @@
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { Equipment, ReadingMetric, Villa } from "./types";
 import { filteredReadings, formatDate, latestReading, metricLabels, maintenanceDue, readingAlerts, sortReadings } from "./insights";
 import { TrendChart } from "./TrendChart";
-import { C, Card, EmptyState, Header, Page, PrimaryButton, SectionTitle, SmallButton, StatTile, StatusPill } from "./HvacUI";
+import { C, Card, CircleStat, EmptyState, Header, Page, PrimaryButton, SectionTitle, SmallButton, StatTile, StatusPill } from "./HvacUI";
 
 export type DeviceTab = "overview" | "readings" | "maintenance" | "compare" | "parts" | "photos";
+
+const villaTones = [
+  { background: "#DDF4F1", border: "#B3E3DC", icon: "#087E8B" },
+  { background: "#E8E8FC", border: "#D0D0F3", icon: "#6660B5" },
+  { background: "#FFF0D7", border: "#F2DEB6", icon: "#B7771A" },
+  { background: "#E4EFFB", border: "#C9DCF4", icon: "#3972B5" },
+  { background: "#FBE6E3", border: "#F0D0CB", icon: "#B8473E" },
+  { background: "#E7F2E5", border: "#CEE3CA", icon: "#4E8655" },
+] as const;
 
 export function DashboardScreen({
   villas,
@@ -35,24 +45,10 @@ export function DashboardScreen({
       <ScrollView contentContainerStyle={{ paddingBottom: 28 }} showsVerticalScrollIndicator={false}>
         <Header title="مِقياس" subtitle="إدارة ومتابعة تكييفات القصر" />
         <View style={{ paddingHorizontal: 20 }}>
-          <View style={{ backgroundColor: C.navy, borderRadius: 24, padding: 20, overflow: "hidden" }}>
-            <View style={{ alignSelf: "flex-end", backgroundColor: "rgba(128,219,215,0.16)", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
-              <Text style={{ color: "#91E3DD", fontSize: 11, fontWeight: "800" }}>سجل فني موحّد · يعمل دون اتصال</Text>
-            </View>
-            <Text style={{ color: "#FFFFFF", fontSize: 23, fontWeight: "900", textAlign: "right", marginTop: 16, lineHeight: 32 }}>كل جهاز له تاريخ واضح</Text>
-            <Text style={{ color: "#C7D8E2", fontSize: 13, lineHeight: 21, textAlign: "right", marginTop: 6 }}>القراءات والصيانة وقطع الغيار في مكان واحد، جاهزة للزيارة القادمة.</Text>
-            <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 18 }}>
-              <View style={{ backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 12, paddingHorizontal: 11, paddingVertical: 8 }}><Text style={{ color: "#EAF4F5", fontSize: 11, fontWeight: "700" }}>متابعة أسبوعية</Text></View>
-              <View style={{ backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 12, paddingHorizontal: 11, paddingVertical: 8 }}><Text style={{ color: "#EAF4F5", fontSize: 11, fontWeight: "700" }}>تنبيهات مبكرة</Text></View>
-            </View>
-            <View style={{ position: "absolute", width: 145, height: 145, borderRadius: 80, borderWidth: 1, borderColor: "rgba(128,219,215,0.17)", left: -55, top: 15 }} />
-            <View style={{ position: "absolute", width: 94, height: 94, borderRadius: 50, borderWidth: 1, borderColor: "rgba(128,219,215,0.14)", left: -30, top: 40 }} />
-          </View>
-
-          <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 14 }}>
-            <StatTile label="الفلل" value={villas.length} accent={C.teal} />
-            <StatTile label="الأجهزة" value={activeUnits} accent={C.navy} />
-            <StatTile label="تحتاج متابعة" value={alertRows.length} accent={alertRows.length ? C.red : C.green} />
+          <View style={{ flexDirection: "row-reverse", gap: 6, marginTop: 8, marginBottom: 22 }}>
+            <CircleStat label="الفلل" value={villas.length} accent={C.teal} background={C.mint} />
+            <CircleStat label="الأجهزة" value={activeUnits} accent={C.navy} background="#E8EEF4" />
+            <CircleStat label="تحتاج متابعة" value={alertRows.length} accent={alertRows.length ? C.red : C.green} background={alertRows.length ? C.redBg : C.greenBg} />
           </View>
 
           <View style={{ marginTop: 24 }}>
@@ -83,24 +79,25 @@ export function DashboardScreen({
                 <View style={{ marginTop: 12 }}><PrimaryButton title="＋ إضافة فيلا جديدة" onPress={onAddVilla} /></View>
               </>
             ) : (
-              <View style={{ flexDirection: "row-reverse", flexWrap: "wrap", gap: 10 }}>
-                {villas.map((villa) => {
+              <View style={{ flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "space-between", rowGap: 18 }}>
+                {villas.map((villa, index) => {
                   const count = equipment.filter((unit) => unit.villaId === villa.id).length;
+                  const tone = villaTones[index % villaTones.length];
                   return (
-                    <Pressable key={villa.id} onPress={() => onOpenVilla(villa.id)} style={({ pressed }) => [{ width: "48.2%", minHeight: 126, padding: 14, borderRadius: 18, backgroundColor: C.white, borderWidth: 1, borderColor: C.line, justifyContent: "space-between" }, pressed && { opacity: 0.78 }]}>
-                      <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" }}>
-                        <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: C.mint, alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.teal, fontSize: 18, fontWeight: "900" }}>⌂</Text></View>
-                        <Text style={{ color: C.muted, fontSize: 18 }}>‹</Text>
+                    <Pressable key={villa.id} accessibilityRole="button" accessibilityLabel={`${villa.name}، ${count} أجهزة`} onPress={() => onOpenVilla(villa.id)} style={({ pressed }) => [{ width: "31%", alignItems: "center" }, pressed && { opacity: 0.75, transform: [{ scale: 0.97 }] }]}>
+                      <View style={{ width: 78, height: 78, borderRadius: 39, backgroundColor: tone.background, borderWidth: 1, borderColor: tone.border, alignItems: "center", justifyContent: "center" }}>
+                        <MaterialCommunityIcons name="home-variant" size={35} color={tone.icon} />
                       </View>
-                      <View style={{ alignItems: "flex-end" }}>
-                        <Text numberOfLines={1} style={{ color: C.ink, fontSize: 14, fontWeight: "900", textAlign: "right" }}>{villa.name}</Text>
-                        <Text style={{ color: C.muted, fontSize: 11, marginTop: 4 }}>{count} {count === 1 ? "جهاز" : "أجهزة"}</Text>
-                      </View>
+                      <Text numberOfLines={1} style={{ width: "100%", color: C.ink, fontSize: 12, fontWeight: "900", textAlign: "center", marginTop: 7 }}>{villa.name}</Text>
+                      <Text style={{ color: C.muted, fontSize: 10, marginTop: 3 }}>{count} {count === 1 ? "جهاز" : "أجهزة"}</Text>
                     </Pressable>
                   );
                 })}
-                <Pressable onPress={onAddVilla} style={{ width: "48.2%", minHeight: 126, borderRadius: 18, borderWidth: 1, borderStyle: "dashed", borderColor: "#B9C9CD", alignItems: "center", justifyContent: "center", gap: 7 }}>
-                  <Text style={{ color: C.teal, fontSize: 23, fontWeight: "500" }}>＋</Text><Text style={{ color: C.teal, fontSize: 12, fontWeight: "800" }}>إضافة فيلا</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel="إضافة فيلا جديدة" onPress={onAddVilla} style={({ pressed }) => [{ width: "31%", alignItems: "center" }, pressed && { opacity: 0.75 }]}>
+                  <View style={{ width: 78, height: 78, borderRadius: 39, borderWidth: 1.5, borderStyle: "dashed", borderColor: "#A9BDC2", backgroundColor: C.white, alignItems: "center", justifyContent: "center" }}>
+                    <MaterialCommunityIcons name="plus" size={30} color={C.teal} />
+                  </View>
+                  <Text numberOfLines={1} style={{ color: C.teal, fontSize: 12, fontWeight: "800", textAlign: "center", marginTop: 7 }}>إضافة فيلا</Text>
                 </Pressable>
               </View>
             )}

@@ -104,6 +104,17 @@ export function SmallButton({ title, onPress, tone = "teal" }: { title: string; 
   return <Pressable onPress={onPress} style={[styles.smallButton, { backgroundColor: toneStyle.backgroundColor }]}><Text style={{ color: toneStyle.color, fontWeight: "800", fontSize: 13 }}>{title}</Text></Pressable>;
 }
 
+export function CircleStat({ label, value, accent = C.teal, background = C.mint }: { label: string; value: string | number; accent?: string; background?: string }) {
+  return (
+    <View style={{ flex: 1, minWidth: 0, alignItems: "center", gap: 7 }}>
+      <View style={{ width: 76, height: 76, borderRadius: 38, backgroundColor: background, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ color: accent, fontSize: 23, fontWeight: "900" }}>{value}</Text>
+      </View>
+      <Text numberOfLines={2} style={{ color: C.ink, fontSize: 11, fontWeight: "800", textAlign: "center", lineHeight: 16 }}>{label}</Text>
+    </View>
+  );
+}
+
 export function StatTile({ label, value, unit, accent = C.teal }: { label: string; value: string | number; unit?: string; accent?: string }) {
   return (
     <View style={styles.statTile}>
