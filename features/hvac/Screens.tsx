@@ -3,7 +3,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { Equipment, ReadingMetric, Villa } from "./types";
 import { filteredReadings, formatDate, latestReading, metricLabels, maintenanceDue, readingAlerts, sortReadings } from "./insights";
 import { TrendChart } from "./TrendChart";
-import { C, Card, CircleStat, EmptyState, Header, Page, PrimaryButton, SectionTitle, SmallButton, StatTile, StatusPill } from "./HvacUI";
+import { C, Card, CircleStat, EmptyState, Header, Page, PrimaryButton, SectionTitle, SmallButton, StatusPill } from "./HvacUI";
 
 export type DeviceTab = "overview" | "readings" | "maintenance" | "compare" | "parts" | "photos";
 
@@ -235,21 +235,7 @@ export function EquipmentScreen({
       <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
         <Header title={equipment.name} subtitle={`${villaName} · ${equipment.type || "جهاز تكييف"}`} onBack={onBack} actionLabel="تعديل البيانات" onAction={onEdit} />
         <View style={{ paddingHorizontal: 20 }}>
-          <View style={{ backgroundColor: C.navy, borderRadius: 20, padding: 17 }}>
-            <View style={{ flexDirection: "row-reverse", alignItems: "center", gap: 12 }}>
-              <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: "rgba(128,219,215,0.17)", alignItems: "center", justifyContent: "center" }}><Text style={{ color: "#8BE0DA", fontSize: 23, fontWeight: "900" }}>❄</Text></View>
-              <View style={{ flex: 1, alignItems: "flex-end" }}>
-                <Text style={{ color: C.white, fontSize: 16, fontWeight: "900", textAlign: "right" }}>{equipment.manufacturer || "جهاز تكييف"}{equipment.capacity ? ` · ${equipment.capacity}` : ""}</Text>
-                <Text style={{ color: "#B8CDD7", fontSize: 11, marginTop: 4, textAlign: "right" }}>{equipment.model || "أضف الموديل"}{equipment.refrigerant ? ` · ${equipment.refrigerant}` : ""}</Text>
-              </View>
-            </View>
-            <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 15 }}>
-              <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 12, padding: 10, alignItems: "flex-end" }}><Text style={{ color: "#AFC3CE", fontSize: 10 }}>آخر قراءة</Text><Text style={{ color: C.white, fontSize: 12, fontWeight: "800", marginTop: 4 }}>{latest ? formatDate(latest.timestamp) : "غير مسجلة"}</Text></View>
-              <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 12, padding: 10, alignItems: "flex-end" }}><Text style={{ color: "#AFC3CE", fontSize: 10 }}>دورية الصيانة</Text><Text style={{ color: C.white, fontSize: 12, fontWeight: "800", marginTop: 4 }}>كل {equipment.maintenanceIntervalDays} يوم</Text></View>
-            </View>
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: "row-reverse", gap: 7, paddingVertical: 15 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: "row-reverse", gap: 7, paddingVertical: 8 }}>
             {tabs.map((item) => {
               const active = tab === item.key;
               return <Pressable key={item.key} onPress={() => setTab(item.key)} style={{ backgroundColor: active ? C.teal : C.white, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: active ? C.teal : C.line }}><Text style={{ color: active ? C.white : C.muted, fontSize: 11, fontWeight: "800" }}>{item.label}{item.key === "photos" && equipment.photos.length ? ` ${equipment.photos.length}` : ""}</Text></Pressable>;
@@ -266,11 +252,12 @@ export function EquipmentScreen({
               ) : null}
               <SectionTitle title="آخر القياسات" note={latest ? formatDate(latest.timestamp, true) : "ابدأ بأول قراءة أسبوعية"} action="＋ تسجيل قراءة" onAction={onAddReading} />
               {latest ? (
-                <View style={{ flexDirection: "row-reverse", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
-                  <StatTile label="الأمبير" value={latest.amps ?? "—"} unit="A" />
-                  <StatTile label="ضغط السحب" value={latest.suctionPressure ?? "—"} unit="PSI" />
-                  <StatTile label="ضغط الطرد" value={latest.dischargePressure ?? "—"} unit="PSI" />
-                  <StatTile label="دخول / خروج" value={`${latest.inletTemp ?? "—"} / ${latest.outletTemp ?? "—"}`} unit="°C" />
+                <View style={{ flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "space-around", rowGap: 16, marginBottom: 20 }}>
+                  <View style={{ width: "31%" }}><CircleStat label="الأمبير · A" value={latest.amps ?? "—"} accent={C.teal} background={C.mint} size={84} /></View>
+                  <View style={{ width: "31%" }}><CircleStat label="ضغط السحب · PSI" value={latest.suctionPressure ?? "—"} accent="#3972B5" background="#E4EFFB" size={84} /></View>
+                  <View style={{ width: "31%" }}><CircleStat label="ضغط الطرد · PSI" value={latest.dischargePressure ?? "—"} accent={C.amber} background={C.amberBg} size={84} /></View>
+                  <View style={{ width: "31%" }}><CircleStat label="حرارة الدخول · °C" value={latest.inletTemp ?? "—"} accent="#6660B5" background="#E8E8FC" size={84} /></View>
+                  <View style={{ width: "31%" }}><CircleStat label="حرارة الخروج · °C" value={latest.outletTemp ?? "—"} accent={C.green} background={C.greenBg} size={84} /></View>
                 </View>
               ) : <View style={{ marginBottom: 20 }}><EmptyState title="لا توجد قراءات بعد" description="افتح نموذج القراءة السريعة وسجّل الأمبير والضغوط ودرجات الحرارة." /><View style={{ marginTop: 10 }}><PrimaryButton title="＋ قراءة أسبوعية جديدة" onPress={onAddReading} /></View></View>}
 

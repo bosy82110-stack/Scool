@@ -104,22 +104,13 @@ export function SmallButton({ title, onPress, tone = "teal" }: { title: string; 
   return <Pressable onPress={onPress} style={[styles.smallButton, { backgroundColor: toneStyle.backgroundColor }]}><Text style={{ color: toneStyle.color, fontWeight: "800", fontSize: 13 }}>{title}</Text></Pressable>;
 }
 
-export function CircleStat({ label, value, accent = C.teal, background = C.mint }: { label: string; value: string | number; accent?: string; background?: string }) {
+export function CircleStat({ label, value, accent = C.teal, background = C.mint, size = 76 }: { label: string; value: string | number; accent?: string; background?: string; size?: number }) {
   return (
     <View style={{ flex: 1, minWidth: 0, alignItems: "center", gap: 7 }}>
-      <View style={{ width: 76, height: 76, borderRadius: 38, backgroundColor: background, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: background, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
         <Text style={{ color: accent, fontSize: 23, fontWeight: "900" }}>{value}</Text>
       </View>
       <Text numberOfLines={2} style={{ color: C.ink, fontSize: 11, fontWeight: "800", textAlign: "center", lineHeight: 16 }}>{label}</Text>
-    </View>
-  );
-}
-
-export function StatTile({ label, value, unit, accent = C.teal }: { label: string; value: string | number; unit?: string; accent?: string }) {
-  return (
-    <View style={styles.statTile}>
-      <Text style={styles.statValue}>{value}<Text style={{ color: accent, fontSize: 13, fontWeight: "800" }}>{unit ? ` ${unit}` : ""}</Text></Text>
-      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
@@ -257,9 +248,6 @@ const styles = StyleSheet.create({
   secondaryButton: { backgroundColor: C.white, borderWidth: 1, borderColor: C.line },
   secondaryButtonText: { color: C.ink },
   smallButton: { borderRadius: 11, paddingHorizontal: 11, paddingVertical: 8 },
-  statTile: { flex: 1, minWidth: 88, backgroundColor: C.white, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 14, alignItems: "flex-end" },
-  statValue: { color: C.ink, fontSize: 20, fontWeight: "900" },
-  statLabel: { color: C.muted, fontSize: 11, fontWeight: "700", marginTop: 4, textAlign: "right" },
   emptyState: { backgroundColor: C.white, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 24, alignItems: "center" },
   emptyIcon: { width: 48, height: 48, backgroundColor: C.mint, borderRadius: 16, alignItems: "center", justifyContent: "center", marginBottom: 12 },
   emptyTitle: { color: C.ink, fontWeight: "900", fontSize: 15, textAlign: "center" },
