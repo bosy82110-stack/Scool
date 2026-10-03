@@ -99,8 +99,8 @@ export function PrimaryButton({ title, onPress, secondary = false, disabled = fa
   );
 }
 
-export function SmallButton({ title, onPress, tone = "teal" }: { title: string; onPress: () => void; tone?: "teal" | "neutral" | "amber" }) {
-  const toneStyle = tone === "amber" ? { backgroundColor: C.amberBg, color: C.amber } : tone === "neutral" ? { backgroundColor: "#EFF3F5", color: C.ink } : { backgroundColor: C.mint, color: C.tealDeep };
+export function SmallButton({ title, onPress, tone = "teal" }: { title: string; onPress: () => void; tone?: "teal" | "neutral" | "amber" | "danger" }) {
+  const toneStyle = tone === "danger" ? { backgroundColor: C.redBg, color: C.red } : tone === "amber" ? { backgroundColor: C.amberBg, color: C.amber } : tone === "neutral" ? { backgroundColor: "#EFF3F5", color: C.ink } : { backgroundColor: C.mint, color: C.tealDeep };
   return <Pressable onPress={onPress} style={[styles.smallButton, { backgroundColor: toneStyle.backgroundColor }]}><Text style={{ color: toneStyle.color, fontWeight: "800", fontSize: 13 }}>{title}</Text></Pressable>;
 }
 

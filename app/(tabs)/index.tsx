@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Platform, Text, View } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
@@ -8,6 +10,7 @@ import { createId, loadStore, saveStore } from "@/features/hvac/storage";
 import type { Equipment, EquipmentPhoto, HvacStore, MaintenanceEntry, Reading, ReadingMetric, SparePart, Villa } from "@/features/hvac/types";
 import { EquipmentScreen, type DeviceTab, DashboardScreen, VillaScreen } from "@/features/hvac/Screens";
 import { EntrySheet, LoadingView, type EntryField } from "@/features/hvac/HvacUI";
+import { backupFilename, createBackupPayload, restoreBackupPayload, validateBackup } from "@/features/hvac/backup";
 import { buildWeeklyReportHtml } from "@/features/hvac/weekly-report";
 
 const equipmentFields: EntryField[] = [
@@ -77,6 +80,8 @@ export default function HomeScreen() {
   const [photoUri, setPhotoUri] = useState<string | undefined>();
   const [storageError, setStorageError] = useState(false);
   const [isExportingReport, setIsExportingReport] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isRestoringBackup, setIsRestoringBackup] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -263,6 +268,91 @@ export default function HomeScreen() {
     }
   };
 
+  const createBackup = async () => {
+    if (isBackingUp || isRestoringBackup) return;
+    setIsBackingUp(true);
+    try {
+      await saveStore(store);
+      const backup = await createBackupPayload(store, async (uri) => ({
+        base64: await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 }),
+      }));
+      const directory = FileSystem.cacheDirectory;
+      if (!directory) throw new Error("مساحة التخزين المؤقت غير متاحة على هذا الجهاز.");
+      const fileUri = `${directory}${backupFilename()}`;
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(backup), { encoding: FileSystem.EncodingType.UTF8 });
+      if (!(await Sharing.isAvailableAsync())) {
+        throw new Error("المشاركة غير متاحة. حدّث نظام الهاتف أو افتح التطبيق على جهاز يدعم المشاركة.");
+      }
+      await Sharing.shareAsync(fileUri, {
+        mimeType: "application/json",
+        dialogTitle: "حفظ نسخة احتياطية من مِقياس",
+        UTI: "public.json",
+      });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "تأكد من توفر مساحة كافية ثم أعد المحاولة.";
+      Alert.alert("تعذّر إنشاء النسخة الاحتياطية", detail);
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
+  const confirmBackupRestore = () => new Promise<boolean>((resolve) => {
+    const message = "سيتم استبدال بيانات التطبيق الحالية بالبيانات الموجودة في النسخة. يُفضّل إنشاء نسخة احتياطية من بياناتك الحالية أولاً. هل تريد المتابعة؟";
+    if (Platform.OS === "web") {
+      resolve(typeof window !== "undefined" && window.confirm(message));
+      return;
+    }
+    let settled = false;
+    const finish = (confirmed: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(confirmed);
+    };
+    Alert.alert("استبدال البيانات الحالية؟", message, [
+      { text: "إلغاء", style: "cancel", onPress: () => finish(false) },
+      { text: "استعادة النسخة", style: "destructive", onPress: () => finish(true) },
+    ], { cancelable: true, onDismiss: () => finish(false) });
+  });
+
+  const restoreBackup = async () => {
+    if (isBackingUp || isRestoringBackup) return;
+    setIsRestoringBackup(true);
+    try {
+      const selection = await DocumentPicker.getDocumentAsync({ type: ["application/json", "text/json"], copyToCacheDirectory: true });
+      if (selection.canceled) return;
+      const source = await FileSystem.readAsStringAsync(selection.assets[0].uri, { encoding: FileSystem.EncodingType.UTF8 });
+      const payload: unknown = JSON.parse(source);
+      validateBackup(payload);
+      const confirmed = await confirmBackupRestore();
+      if (!confirmed) return;
+
+      const documents = FileSystem.documentDirectory;
+      if (!documents) throw new Error("مجلد تخزين التطبيق غير متاح.");
+      const restoreDirectory = `${documents}miqyas-restored-${Date.now()}/`;
+      await FileSystem.makeDirectoryAsync(restoreDirectory, { intermediates: true });
+      const restored = await restoreBackupPayload(payload, async (media, index) => {
+        const extension = media.mimeType.split("/")[1] === "jpeg" ? "jpg" : media.mimeType.split("/")[1];
+        const uri = `${restoreDirectory}image-${index}.${extension}`;
+        await FileSystem.writeAsStringAsync(uri, media.base64, { encoding: FileSystem.EncodingType.Base64 });
+        return uri;
+      });
+
+      await saveStore(restored);
+      setStore(restored);
+      setScreen("home");
+      setVillaId(null);
+      setEquipmentId(null);
+      setDeviceTab("overview");
+      const readingCount = restored.equipment.reduce((sum, unit) => sum + unit.readings.length, 0);
+      Alert.alert("تمت استعادة النسخة", `استُعيدت ${restored.villas.length} فيلا/مبنى و${restored.equipment.length} جهاز و${readingCount} قراءة مع الصور والسجلات المرتبطة.`);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "تحقق من اختيار ملف نسخة احتياطية سليم ثم أعد المحاولة.";
+      Alert.alert("تعذّرت استعادة النسخة", detail);
+    } finally {
+      setIsRestoringBackup(false);
+    }
+  };
+
   const currentFields: EntryField[] = form?.kind === "villa"
     ? [{ key: "name", label: "اسم الفيلا أو المبنى", placeholder: "مثال: الفيلا الرئيسية", required: true }]
     : form?.kind === "equipment" ? equipmentFields
@@ -282,6 +372,45 @@ export default function HomeScreen() {
     setScreen("home");
     setVillaId(null);
     setEquipmentId(null);
+  };
+
+  const confirmDestructiveAction = (title: string, message: string) => new Promise<boolean>((resolve) => {
+    if (Platform.OS === "web") {
+      resolve(typeof window !== "undefined" && window.confirm(`${title}\n\n${message}`));
+      return;
+    }
+    let settled = false;
+    const finish = (confirmed: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(confirmed);
+    };
+    Alert.alert(title, message, [
+      { text: "إلغاء", style: "cancel", onPress: () => finish(false) },
+      { text: "حذف نهائي", style: "destructive", onPress: () => finish(true) },
+    ], { cancelable: true, onDismiss: () => finish(false) });
+  });
+
+  const deleteVilla = async () => {
+    if (!selectedVilla) return;
+    const confirmed = await confirmDestructiveAction("حذف الفيلا؟", `سيتم حذف «${selectedVilla.name}» وكل أجهزة التكييف والقراءات والصيانة وقطع الغيار والصور التابعة لها. لا يمكن التراجع عن الحذف.`);
+    if (!confirmed) return;
+    const deletedId = selectedVilla.id;
+    patchStore((current) => ({
+      villas: current.villas.filter((villa) => villa.id !== deletedId),
+      equipment: current.equipment.filter((unit) => unit.villaId !== deletedId),
+    }));
+    goHome();
+  };
+
+  const deleteEquipment = async () => {
+    if (!selectedEquipment) return;
+    const confirmed = await confirmDestructiveAction("حذف الجهاز؟", `سيتم حذف «${selectedEquipment.name}» وكل قراءاته وسجل صيانته وقطع غياره وصوره. لا يمكن التراجع عن الحذف.`);
+    if (!confirmed) return;
+    const deletedId = selectedEquipment.id;
+    patchStore((current) => ({ ...current, equipment: current.equipment.filter((unit) => unit.id !== deletedId) }));
+    setEquipmentId(null);
+    setScreen("villa");
   };
 
   if (!loaded) return <LoadingView />;
@@ -304,6 +433,10 @@ export default function HomeScreen() {
           }}
           onExportWeeklyReport={exportWeeklyReport}
           isExportingReport={isExportingReport}
+          onCreateBackup={createBackup}
+          onRestoreBackup={restoreBackup}
+          isBackingUp={isBackingUp}
+          isRestoringBackup={isRestoringBackup}
         />
       ) : null}
       {screen === "villa" && selectedVilla ? (
@@ -314,6 +447,7 @@ export default function HomeScreen() {
           onEditVilla={() => openVillaForm(selectedVilla)}
           onAddEquipment={() => openEquipmentForm()}
           onOpenEquipment={(id) => { setEquipmentId(id); setDeviceTab("overview"); setScreen("equipment"); }}
+          onDeleteVilla={deleteVilla}
         />
       ) : null}
       {screen === "equipment" && selectedEquipment ? (
@@ -324,6 +458,7 @@ export default function HomeScreen() {
           setTab={setDeviceTab}
           onBack={() => { setScreen("villa"); setEquipmentId(null); }}
           onEdit={() => openEquipmentForm(selectedEquipment)}
+          onDelete={deleteEquipment}
           onAddReading={openReadingForm}
           onAddMaintenance={openMaintenanceForm}
           onAddPart={openPartForm}

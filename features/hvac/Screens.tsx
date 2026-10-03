@@ -33,6 +33,10 @@ export function DashboardScreen({
   onOpenEquipment,
   onExportWeeklyReport,
   isExportingReport,
+  onCreateBackup,
+  onRestoreBackup,
+  isBackingUp,
+  isRestoringBackup,
 }: {
   villas: Villa[];
   equipment: Equipment[];
@@ -41,6 +45,10 @@ export function DashboardScreen({
   onOpenEquipment: (id: string) => void;
   onExportWeeklyReport: () => void;
   isExportingReport: boolean;
+  onCreateBackup: () => void;
+  onRestoreBackup: () => void;
+  isBackingUp: boolean;
+  isRestoringBackup: boolean;
 }) {
   const alertRows = equipment.flatMap((unit) => {
     const villa = villas.find((item) => item.id === unit.villaId);
@@ -76,6 +84,22 @@ export function DashboardScreen({
             </View>
             <View style={{ marginTop: 12 }}>
               <PrimaryButton title={isExportingReport ? "جارٍ تجهيز التقرير…" : "إنشاء ومشاركة التقرير"} onPress={onExportWeeklyReport} disabled={isExportingReport} />
+            </View>
+          </View>
+
+          <View style={{ backgroundColor: C.white, borderRadius: 18, borderWidth: 1, borderColor: C.line, padding: 15, marginTop: 12 }}>
+            <View style={{ flexDirection: "row-reverse", alignItems: "center", gap: 11 }}>
+              <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: C.mint, alignItems: "center", justifyContent: "center" }}>
+                <MaterialCommunityIcons name="backup-restore" size={24} color={C.teal} />
+              </View>
+              <View style={{ flex: 1, alignItems: "flex-end" }}>
+                <Text style={{ color: C.ink, fontSize: 14, fontWeight: "900", textAlign: "right" }}>نسخة احتياطية من بياناتك</Text>
+                <Text style={{ color: C.muted, fontSize: 11, marginTop: 3, textAlign: "right" }}>تشمل كل السجلات والصور · احفظها خارج الهاتف</Text>
+              </View>
+            </View>
+            <View style={{ marginTop: 12, gap: 8 }}>
+              <PrimaryButton title={isBackingUp ? "جارٍ تجهيز النسخة…" : "إنشاء ومشاركة نسخة احتياطية"} onPress={onCreateBackup} disabled={isBackingUp || isRestoringBackup} />
+              <PrimaryButton title={isRestoringBackup ? "جارٍ استعادة البيانات…" : "استعادة نسخة سابقة"} onPress={onRestoreBackup} secondary disabled={isBackingUp || isRestoringBackup} />
             </View>
           </View>
 
@@ -148,6 +172,7 @@ export function VillaScreen({
   onEditVilla,
   onAddEquipment,
   onOpenEquipment,
+  onDeleteVilla,
 }: {
   villa: Villa;
   equipment: Equipment[];
@@ -155,12 +180,14 @@ export function VillaScreen({
   onEditVilla: () => void;
   onAddEquipment: () => void;
   onOpenEquipment: (id: string) => void;
+  onDeleteVilla: () => void;
 }) {
   return (
     <Page>
       <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
         <Header title={villa.name} subtitle="الأماكن وأجهزة التكييف" onBack={onBack} actionLabel="تعديل" onAction={onEditVilla} />
         <View style={{ paddingHorizontal: 20 }}>
+          <View style={{ alignItems: "flex-start", marginBottom: 6 }}><SmallButton title="حذف هذه الفيلا" tone="danger" onPress={onDeleteVilla} /></View>
           <SectionTitle title="الأجهزة" note="اضغط على الجهاز لعرض بياناته وسجله" action="＋ إضافة جهاز" onAction={onAddEquipment} />
           {equipment.length === 0 ? <EmptyState title="لا توجد أجهزة في هذه الفيلا" description="أضف أول جهاز؛ وسيظهر هنا داخل دائرة باسمه الذي تختاره." /> : null}
           <View style={{ flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "space-between", rowGap: 20, marginTop: equipment.length === 0 ? 16 : 0 }}>
@@ -210,6 +237,7 @@ export function EquipmentScreen({
   setTab,
   onBack,
   onEdit,
+  onDelete,
   onAddReading,
   onAddMaintenance,
   onAddPart,
@@ -225,6 +253,7 @@ export function EquipmentScreen({
   setTab: (tab: DeviceTab) => void;
   onBack: () => void;
   onEdit: () => void;
+  onDelete: () => void;
   onAddReading: () => void;
   onAddMaintenance: () => void;
   onAddPart: () => void;
@@ -254,6 +283,7 @@ export function EquipmentScreen({
       <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
         <Header title={equipment.name} subtitle={`${villaName} · ${equipment.type || "جهاز تكييف"}`} onBack={onBack} actionLabel="تعديل البيانات" onAction={onEdit} />
         <View style={{ paddingHorizontal: 20 }}>
+          <View style={{ alignItems: "flex-start", paddingTop: 5 }}><SmallButton title="حذف الجهاز" tone="danger" onPress={onDelete} /></View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: "row-reverse", gap: 7, paddingVertical: 8 }}>
             {tabs.map((item) => {
               const active = tab === item.key;
