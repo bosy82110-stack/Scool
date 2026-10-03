@@ -31,12 +31,16 @@ export function DashboardScreen({
   onAddVilla,
   onOpenVilla,
   onOpenEquipment,
+  onExportWeeklyReport,
+  isExportingReport,
 }: {
   villas: Villa[];
   equipment: Equipment[];
   onAddVilla: () => void;
   onOpenVilla: (id: string) => void;
   onOpenEquipment: (id: string) => void;
+  onExportWeeklyReport: () => void;
+  isExportingReport: boolean;
 }) {
   const alertRows = equipment.flatMap((unit) => {
     const villa = villas.find((item) => item.id === unit.villaId);
@@ -58,6 +62,21 @@ export function DashboardScreen({
             <CircleStat label="الفلل" value={villas.length} accent={C.teal} background={C.mint} />
             <CircleStat label="الأجهزة" value={activeUnits} accent={C.navy} background="#E8EEF4" />
             <CircleStat label="تحتاج متابعة" value={alertRows.length} accent={alertRows.length ? C.red : C.green} background={alertRows.length ? C.redBg : C.greenBg} />
+          </View>
+
+          <View style={{ backgroundColor: C.white, borderRadius: 18, borderWidth: 1, borderColor: C.line, padding: 15, marginBottom: 4 }}>
+            <View style={{ flexDirection: "row-reverse", alignItems: "center", gap: 11 }}>
+              <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: "#FCE9E7", alignItems: "center", justifyContent: "center" }}>
+                <MaterialCommunityIcons name="file-pdf-box" size={25} color={C.red} />
+              </View>
+              <View style={{ flex: 1, alignItems: "flex-end" }}>
+                <Text style={{ color: C.ink, fontSize: 14, fontWeight: "900", textAlign: "right" }}>تقرير الصيانة الأسبوعي</Text>
+                <Text style={{ color: C.muted, fontSize: 11, marginTop: 3, textAlign: "right" }}>آخر 7 أيام · ملف PDF جاهز للإدارة</Text>
+              </View>
+            </View>
+            <View style={{ marginTop: 12 }}>
+              <PrimaryButton title={isExportingReport ? "جارٍ تجهيز التقرير…" : "إنشاء ومشاركة التقرير"} onPress={onExportWeeklyReport} disabled={isExportingReport} />
+            </View>
           </View>
 
           <View style={{ marginTop: 24 }}>

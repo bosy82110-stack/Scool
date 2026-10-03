@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Platform, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 import { ScreenContainer } from "@/components/screen-container";
 import { createId, loadStore, saveStore } from "@/features/hvac/storage";
 import type { Equipment, EquipmentPhoto, HvacStore, MaintenanceEntry, Reading, ReadingMetric, SparePart, Villa } from "@/features/hvac/types";
 import { EquipmentScreen, type DeviceTab, DashboardScreen, VillaScreen } from "@/features/hvac/Screens";
 import { EntrySheet, LoadingView, type EntryField } from "@/features/hvac/HvacUI";
+import { buildWeeklyReportHtml } from "@/features/hvac/weekly-report";
 
 const equipmentFields: EntryField[] = [
   { key: "name", label: "اسم الغرفة أو الجهاز", placeholder: "مثال: غرفة النوم الرئيسية — سبليت", required: true },
@@ -73,6 +76,7 @@ export default function HomeScreen() {
   const [values, setValues] = useState<EntryValues>({});
   const [photoUri, setPhotoUri] = useState<string | undefined>();
   const [storageError, setStorageError] = useState(false);
+  const [isExportingReport, setIsExportingReport] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -237,6 +241,28 @@ export default function HomeScreen() {
     setDeviceTab("photos");
   };
 
+  const exportWeeklyReport = async () => {
+    if (isExportingReport) return;
+    setIsExportingReport(true);
+    try {
+      const report = buildWeeklyReportHtml(store);
+      const { uri } = await Print.printToFileAsync({ html: report.html });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: "application/pdf",
+          dialogTitle: "مشاركة تقرير الصيانة الأسبوعي",
+          UTI: "com.adobe.pdf",
+        });
+      } else {
+        Alert.alert("تم إنشاء التقرير", "تعذّرت مشاركة الملف مباشرة على هذا الجهاز.");
+      }
+    } catch {
+      Alert.alert("تعذّر إنشاء التقرير", "حاول مرة أخرى وتأكد من توفر مساحة كافية على الجهاز.");
+    } finally {
+      setIsExportingReport(false);
+    }
+  };
+
   const currentFields: EntryField[] = form?.kind === "villa"
     ? [{ key: "name", label: "اسم الفيلا أو المبنى", placeholder: "مثال: الفيلا الرئيسية", required: true }]
     : form?.kind === "equipment" ? equipmentFields
@@ -276,6 +302,8 @@ export default function HomeScreen() {
             setDeviceTab("overview");
             setScreen("equipment");
           }}
+          onExportWeeklyReport={exportWeeklyReport}
+          isExportingReport={isExportingReport}
         />
       ) : null}
       {screen === "villa" && selectedVilla ? (
