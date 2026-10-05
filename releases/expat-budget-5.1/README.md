@@ -1,2 +1,3 @@
-The APK in this directory is the stable pre-calculator build. The updated developer package and source archive contain the new Salary Calculator source; a new signed APK requires Android Build Tools.
-The public package intentionally excludes the signing keystore.
+The updated source now places Salary Calculator in a separate card below Salaries.
+The APK remains the previously built stable APK until Android Build Tools are available.
+The public package excludes the signing keystore.
